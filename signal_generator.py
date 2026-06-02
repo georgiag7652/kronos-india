@@ -67,7 +67,7 @@ def generate_signal(
     trend: Optional["TrendSnapshot"] = None,
 ) -> TradeSignal:
     pred_open    = float(pred_df["open"].iloc[0])
-    entry        = current_price if current_price else pred_open
+    entry        = current_price if current_price is not None else pred_open
     pred_high    = float(pred_df["high"].max())
     pred_low     = float(pred_df["low"].min())
     upside_pct   = ((pred_high - entry) / entry) * 100
