@@ -6,7 +6,7 @@
 ![Model](https://img.shields.io/badge/Model-Kronos%20Foundation-purple)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-> AI-powered intraday trade signal generator for Indian stock markets, built on the [Kronos](https://github.com/shiyu-coder/Kronos) financial foundation model.
+> AI-powered intraday trade signal generator for Indian stock markets, built on the [Kronos](https://github.com/shiyu-coder/Kronos) financial foundation model — accepted at **AAAI 2026**.
 
 ---
 
@@ -14,13 +14,27 @@
 
 ---
 
-## What It Does
+## What is Kronos?
+
+[Kronos](https://github.com/shiyu-coder/Kronos) is a decoder-only foundation model pre-trained specifically on financial candlestick (K-line) data — OHLCV sequences — from over 45 global exchanges, covering more than 12 billion K-line records. Unlike general-purpose time series models, Kronos is designed from the ground up for the unique noise characteristics of financial markets. It uses a specialized tokenizer that discretizes continuous price and volume data into discrete tokens, then applies autoregressive pre-training to learn temporal and cross-asset patterns.
+
+In zero-shot benchmarks, Kronos outperforms the leading time series foundation model by 93% on price forecasting RankIC and achieves 9% lower MAE on volatility forecasting.
+
+- 📄 [arXiv Paper](https://arxiv.org/abs/2508.02739)
+- 🤗 [HuggingFace](https://huggingface.co/papers/2508.02739)
+- 💻 [Official Repository](https://github.com/shiyu-coder/Kronos)
+
+---
+
+## What This Pipeline Does
+
+This project wraps Kronos into a complete signal generation and tracking system for the Indian stock market (NSE/BSE). Every evening after market close, it:
 
 1. **Scans NSE** for today's top gainers and losers across Large Cap (Nifty 100), Mid Cap (Nifty Midcap 150), and Small Cap (Nifty Smallcap 250)
 2. **Analyses trends** using RSI, ADX, SMA20/50, weekly/monthly momentum, RVOL, and OBV
-3. **Predicts price** using Kronos — a transformer model trained on 45+ global exchanges
-4. **Generates signals** with entry, target (5–7%), stop-loss (2.5%), and R:R ratio
-5. **Tracks outcomes** over time to measure real-world accuracy
+3. **Predicts price** using Kronos — fed the last 512 candles of OHLCV history at your chosen interval
+4. **Generates signals** with entry, target (5–7%), stop-loss (2.5%), and R:R ratio — only when Kronos and the trend agree
+5. **Tracks outcomes** over time to measure real-world accuracy against actual market data
 
 ---
 
@@ -28,7 +42,7 @@
 
 ```text
 NSE Archive CSVs          →  Large / Mid / Small cap universe
-yfinance OHLCV            →  Historical candles (1h / 15m / 5m)
+yfinance OHLCV            →  Historical candles (1h / 15m / 5m / 1m)
 Trend Analyzer            →  RSI · ADX · SMA · RVOL · OBV · Momentum
         ↓
 Kronos Foundation Model   →  Predicts next N trading days (OHLCV)
@@ -48,15 +62,14 @@ Prediction Tracker        →  SQLite log · WIN/LOSS evaluation · Performance 
 | Python | 3.10+ |
 | CUDA (recommended) | 12.8+ |
 | GPU VRAM (recommended) | 4 GB+ |
-| Groww account (optional) | For live data integration |
 
-> **Note on `--interval 1m`:** Kronos has a 512-candle context window. One full NSE session is 375 one-minute candles, so `--interval 1m` gives Kronos only approximately 1 full trading day plus roughly 2 hours of the prior session as context — very limited history. For broader market context use `--interval 15m` instead, which fits approximately 20 trading days of history within the same 512-candle window.
+> **GPU strongly recommended:** CPU inference is possible but very slow — Kronos-base may take several minutes per stock on CPU.
+
+> **Note on `--interval 1m`:** Kronos has a 512-candle context window. One full NSE session is 375 one-minute candles, so `--interval 1m` gives Kronos only approximately 1.5 trading days of history as context — very limited. For broader market context use `--interval 15m` instead, which fits approximately 20 trading days within the same 512-candle window.
 
 ---
 
 ## Installation
-
-> **GPU strongly recommended:** CUDA 12.8+ and an NVIDIA GPU with 4 GB+ VRAM are strongly recommended. CPU inference is possible but will be very slow — Kronos-base may take several minutes per stock on CPU.
 
 ### 1. Clone both repositories
 
@@ -110,16 +123,16 @@ pip install streamlit
 streamlit run app.py
 ```
 
-Opens at `http://localhost:8501` — dropdowns with defaults, per-step progress bars, styled scanner tables (green/red), trend analysis table, and a colour-coded signals table (green rows for LONG, red for SHORT).
+Opens at `http://localhost:8501` — all arguments as dropdowns, per-step progress bars, styled scanner tables (green/red), trend analysis table, colour-coded signals table (green for LONG, red for SHORT), and tracker controls built in.
 
 ### Command Line
 
 ```bash
-# Scan all cap tiers, predict next 3 days, log signals
+# Daily scan — all cap tiers, predict next 3 days, log signals
 python main.py --track
 
-# Intraday only (15-minute candles for finer resolution)
-python main.py --interval 15m --days 1 --cap large
+# Intraday only — 15m candles, predict tomorrow, large cap
+python main.py --interval 15m --days 1 --cap large --track
 
 # Test on specific stocks
 python main.py --symbols RELIANCE TCS INFY --samples 5
@@ -225,11 +238,11 @@ Each stock gets a score from **-8 to +8** based on:
 
 ## Prediction Tracker
 
-Track every signal's real-world outcome automatically.
+Every signal logged with `--track` is evaluated after the prediction window closes. The tracker walks through candles in order to determine which level — target or stop-loss — was hit first, making evaluation more realistic than simply checking the end-of-period close.
 
 - The candle **interval** used for a run is stored alongside each signal and used when fetching actual price data during evaluation — a 15m signal is evaluated on 15m candles, not 1h
-- **eval_by** date is calculated using NSE holiday-aware business days (weekends + official NSE holidays skipped)
-- Evaluation uses the **actual next-day open price** as the entry point, not the signal's logged price — targets and stop-losses are recalculated from there
+- **eval_by** date is calculated using NSE holiday-aware business days — weekends and official NSE holidays are both skipped
+- Evaluation uses the **actual next-day open price** as the realistic entry point, not the signal's logged close price — targets and stop-losses are recalculated from there
 - The EXPIRED exit price is the last close of the eval_by date specifically, not any earlier candle
 
 ```bash
@@ -245,7 +258,7 @@ python tracker.py report
 # List all logged signals
 python tracker.py show
 
-# Force-evaluate overdue signals that were skipped due to data gaps
+# Force-evaluate overdue signals skipped due to data gaps
 python tracker.py evaluate --force
 ```
 
@@ -294,6 +307,7 @@ Worst loss run  : 3 in a row
 ```text
 kronos-india/
 ├── main.py              # Pipeline orchestrator — entry point
+├── app.py               # Streamlit web dashboard
 ├── market_scanner.py    # NSE gainers/losers by cap tier
 ├── data_fetcher.py      # Historical OHLCV via yfinance (multi-interval)
 ├── trend_analyzer.py    # RSI, ADX, SMA, RVOL, OBV, momentum scoring
@@ -331,17 +345,25 @@ Models are downloaded automatically from HuggingFace Hub on first run (~500MB fo
 - [x] Prediction tracker with WIN/LOSS evaluation
 - [x] Tracker: interval-aware evaluation, NSE holiday scheduling, actual-entry P&L, streak tracking
 - [x] Web dashboard (Streamlit) with live progress, styled tables, tracker controls
-- [ ] Groww SDK integration for real-time live data
-- [ ] Live candle loop (re-predict every candle during market hours)
 - [ ] Fine-tuning Kronos on Indian market data
+- [ ] Live candle loop (re-predict every candle during market hours)
 - [ ] Telegram / email alerts for actionable signals
+- [ ] Groww SDK integration for real-time live data
 
 ---
 
-## Disclaimer
+## Acknowledgements
 
-> This tool is for **research and educational purposes only**.
-> It does not constitute financial advice.
-> Past model performance does not guarantee future results.
-> Always use a hard stop-loss order with your broker.
-> Trade only what you can afford to lose.
+Built on [Kronos](https://github.com/shiyu-coder/Kronos) by Yu Shi, Zongliang Fu, Shuo Chen, Bohan Zhao, Wei Xu, Changshui Zhang, and Jian Li — accepted at AAAI 2026.
+
+```bibtex
+@misc{shi2025kronos,
+  title={Kronos: A Foundation Model for the Language of Financial Markets},
+  author={Yu Shi and Zongliang Fu and Shuo Chen and Bohan Zhao and Wei Xu and Changshui Zhang and Jian Li},
+  year={2025},
+  eprint={2508.02739},
+  archivePrefix={arXiv},
+  primaryClass={q-fin.ST},
+  url={https://arxiv.org/abs/2508.02739}
+}
+```
