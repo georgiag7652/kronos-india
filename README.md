@@ -20,6 +20,20 @@
 ## Trend Analysis
 
 ![Trend Analysis](images/trend_analysis.png)
+
+## Experimental Results
+
+⚠️ Results are currently being collected.
+
+Current experiment:
+
+- Model: Kronos-base
+- Market Universe: NSE Large Cap + Mid Cap + Small Cap
+- Interval: 1 minute
+- Prediction Horizon: 1 trading day
+- Signal Tracking: Enabled
+
+The built-in tracker is collecting live signal outcomes. Performance statistics will be published once a statistically meaningful sample size has been accumulated.
 ## What is Kronos?
 
 [Kronos](https://github.com/shiyu-coder/Kronos) is a decoder-only foundation model pre-trained specifically on financial candlestick (K-line) data — OHLCV sequences — from over 45 global exchanges, covering more than 12 billion K-line records. Unlike general-purpose time series models, Kronos is designed from the ground up for the unique noise characteristics of financial markets. It uses a specialized tokenizer that discretizes continuous price and volume data into discrete tokens, then applies autoregressive pre-training to learn temporal and cross-asset patterns.
