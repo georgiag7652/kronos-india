@@ -54,7 +54,7 @@ Prediction Tracker        →  SQLite log · WIN/LOSS evaluation · Performance 
 
 ```bash
 git clone https://github.com/shiyu-coder/Kronos.git
-git clone https://github.com/your-username/kronos-india.git
+git clone https://github.com/jvaidya10/kronos-india.git
 cd kronos-india
 ```
 
