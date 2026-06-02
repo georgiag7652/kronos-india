@@ -13,7 +13,13 @@
 > ⚠️ **Disclaimer:** This tool is for **research and educational purposes only**. It does not constitute financial advice. Past model performance does not guarantee future results. Always use a hard stop-loss order with your broker. Trade only what you can afford to lose.
 
 ---
+## Dashboard Preview
 
+![Dashboard](images/dashboard.png)
+
+## Trend Analysis
+
+![Trend Analysis](images/trend_analysis.png)
 ## What is Kronos?
 
 [Kronos](https://github.com/shiyu-coder/Kronos) is a decoder-only foundation model pre-trained specifically on financial candlestick (K-line) data — OHLCV sequences — from over 45 global exchanges, covering more than 12 billion K-line records. Unlike general-purpose time series models, Kronos is designed from the ground up for the unique noise characteristics of financial markets. It uses a specialized tokenizer that discretizes continuous price and volume data into discrete tokens, then applies autoregressive pre-training to learn temporal and cross-asset patterns.
