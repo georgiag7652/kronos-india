@@ -11,7 +11,8 @@ venv/
 env/
 .env
 
-# Outputs — personal trade data, not for version control
+# Outputs — personal trading signal history and tracker database
+outputs/
 outputs/*.csv
 outputs/*.db
 
@@ -26,6 +27,14 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Python packaging artifacts
+*.egg-info/
+dist/
+build/
+
+# Log files
+*.log
 
 # Kronos model cache (downloaded from HuggingFace, large files)
 *.bin

@@ -10,6 +10,10 @@
 
 ---
 
+> ⚠️ **Disclaimer:** This tool is for **research and educational purposes only**. It does not constitute financial advice. Past model performance does not guarantee future results. Always use a hard stop-loss order with your broker. Trade only what you can afford to lose.
+
+---
+
 ## What It Does
 
 1. **Scans NSE** for today's top gainers and losers across Large Cap (Nifty 100), Mid Cap (Nifty Midcap 150), and Small Cap (Nifty Smallcap 250)
@@ -46,9 +50,13 @@ Prediction Tracker        →  SQLite log · WIN/LOSS evaluation · Performance 
 | GPU VRAM (recommended) | 4 GB+ |
 | Groww account (optional) | For live data integration |
 
+> **Note on `--interval 1m`:** Kronos has a 512-candle context window. One full NSE session is 375 one-minute candles, so `--interval 1m` gives Kronos only approximately 1 full trading day plus roughly 2 hours of the prior session as context — very limited history. For broader market context use `--interval 15m` instead, which fits approximately 20 trading days of history within the same 512-candle window.
+
 ---
 
 ## Installation
+
+> **GPU strongly recommended:** CUDA 12.8+ and an NVIDIA GPU with 4 GB+ VRAM are strongly recommended. CPU inference is possible but will be very slow — Kronos-base may take several minutes per stock on CPU.
 
 ### 1. Clone both repositories
 

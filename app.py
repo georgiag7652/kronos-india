@@ -209,6 +209,28 @@ with right:
         total     = len(ss.pred_all)
         completed = ss.pred_idx
 
+        # Re-render scanner tables on every prediction rerun so they stay visible
+        if ss.pred_scan_results:
+            for tier, (gainers_df, losers_df) in ss.pred_scan_results.items():
+                with st.expander(f"📊 {tier.upper()} CAP", expanded=True):
+                    gc, lc = st.columns(2)
+                    with gc:
+                        st.markdown("**Gainers**")
+                        st.dataframe(_style_scanner(gainers_df, gainers=True),
+                                     use_container_width=True, hide_index=True)
+                    with lc:
+                        st.markdown("**Losers**")
+                        st.dataframe(_style_scanner(losers_df, gainers=False),
+                                     use_container_width=True, hide_index=True)
+        elif ss.pred_all:
+            symbols_list = [sym for sym, *_ in ss.pred_all]
+            st.info(f"Symbols override: {', '.join(symbols_list)}")
+
+        if ss.pred_trend_rows:
+            with st.expander("📈 Trend Analysis", expanded=False):
+                st.dataframe(_style_trend(pd.DataFrame(ss.pred_trend_rows)),
+                             use_container_width=True, hide_index=True)
+
         main_prog.progress(
             0.60 + 0.25 * (completed / max(total, 1)),
             text=f"[4/5] Kronos predictions  ({completed} / {total})"
@@ -225,11 +247,6 @@ with right:
             label = "⏹ Stopped" if stopped else "✅ Pipeline complete"
             main_prog.progress(1.0 if all_done else (0.60 + 0.25 * completed / max(total, 1)),
                                text=label)
-
-            if ss.pred_trend_rows:
-                with st.expander("📈 Trend Analysis", expanded=False):
-                    st.dataframe(_style_trend(pd.DataFrame(ss.pred_trend_rows)),
-                                 use_container_width=True, hide_index=True)
 
             if ss.pred_done:
                 main_prog.progress(0.90, text="[5/5] Generating signals...")
