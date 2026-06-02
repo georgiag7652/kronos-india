@@ -257,10 +257,7 @@ def main():
 
     if args.track:
         from tracker import log_signals
-        # Attach trend snapshot to each signal so tracker can store volume info
-        for sig in signals:
-            sig._trend = trends.get(sig.symbol)
-        log_signals(signals, pred_days=args.days, interval=args.interval)
+        log_signals(signals, pred_days=args.days, interval=args.interval, trends=trends)
 
     print("\nDone. Always place a hard stop-loss order with your broker.")
 

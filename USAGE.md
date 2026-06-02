@@ -291,12 +291,12 @@ Worst loss run  : 3 in a row
 
 ### Confluence levels
 
-| Level           | Meaning                                                    |
-|-----------------|------------------------------------------------------------|
-| `STRONG ***`    | Weekly + monthly trend fully agrees with Kronos signal     |
-| `MODERATE **`   | Trend leans the same way as Kronos                         |
-| `WEAK *`        | Trend is neutral — signal exists but take smaller position |
-| `AGAINST TREND` | Trend opposes Kronos — trade blocked, shown as NO TRADE    |
+| Level | Meaning |
+| --- | --- |
+| `STRONG ***` | Trend score >= +3 (LONG) or <= -3 (SHORT) — strongly agrees with Kronos |
+| `MODERATE **` | Trend score +1 or +2 (LONG) or -1 or -2 (SHORT) — leans same way |
+| `WEAK *` | Trend score 0 — neutral, take smaller position |
+| `AGAINST TREND` | Trend opposes signal direction — trade blocked, shown as NO TRADE |
 
 ---
 

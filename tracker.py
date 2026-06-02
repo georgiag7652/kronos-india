@@ -124,9 +124,11 @@ def _next_business_days(from_date: datetime, n: int) -> datetime:
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 
-def log_signals(signals: list, pred_days: int = 3, interval: str = "1h") -> int:
+def log_signals(signals: list, pred_days: int = 3, interval: str = "1h",
+                trends: dict = None) -> int:
     """
     Saves actionable signals to the tracker DB.
+    trends: optional dict {symbol: TrendSnapshot} — used to store RVOL/OBV alongside each signal.
     Returns number of signals logged.
     """
     init_db()
@@ -141,7 +143,7 @@ def log_signals(signals: list, pred_days: int = 3, interval: str = "1h") -> int:
 
             tgt_pct = abs((s.target - s.entry) / s.entry * 100) if s.entry else 0
             sl_pct  = abs((s.stop_loss - s.entry) / s.entry * 100) if s.entry else 0
-            trend   = getattr(s, "_trend", None)
+            trend   = (trends or {}).get(s.symbol)
 
             con.execute("""
                 INSERT INTO signals

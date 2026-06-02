@@ -46,17 +46,17 @@ def _confidence_from_iqr(pred_df: pd.DataFrame, entry: float) -> str:
 
 
 def _confluence(direction: str, trend: "TrendSnapshot") -> str:
-    score = trend.score  # -6 to +6
+    score = trend.score  # -8 to +8
     if direction == "LONG":
-        if score >= 3:   return "STRONG"
-        if score >= 1:   return "MODERATE"
-        if score == 0:   return "WEAK"
-        return "AGAINST TREND"
+        if score >= 3:   return "STRONG"       # ≥ +3
+        if score >= 1:   return "MODERATE"     # +1 or +2
+        if score == 0:   return "WEAK"         #  0
+        return "AGAINST TREND"                 # < 0
     if direction == "SHORT":
-        if score <= -3:  return "STRONG"
-        if score <= -1:  return "MODERATE"
-        if score == 0:   return "WEAK"
-        return "AGAINST TREND"
+        if score <= -3:  return "STRONG"       # ≤ -3
+        if score <= -1:  return "MODERATE"     # -1 or -2
+        if score == 0:   return "WEAK"         #  0
+        return "AGAINST TREND"                 # > 0
     return "NEUTRAL"
 
 

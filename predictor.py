@@ -8,9 +8,21 @@ import sys
 import pandas as pd
 from typing import Optional
 
-# Use locally cached weights — skip HuggingFace Hub version-check on every run.
-# Delete this line only if you want to pull updated weights from HF.
-os.environ.setdefault("HF_HUB_OFFLINE", "1")
+def _hf_cache_exists() -> bool:
+    """Returns True if any Kronos model weights are already in the HuggingFace cache."""
+    cache_dir = os.environ.get(
+        "HF_HUB_CACHE",
+        os.path.join(os.path.expanduser("~"), ".cache", "huggingface", "hub"),
+    )
+    if not os.path.isdir(cache_dir):
+        return False
+    return any(
+        entry.startswith("models--NeoQuasar--Kronos")
+        for entry in os.listdir(cache_dir)
+    )
+
+if _hf_cache_exists():
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")  # skip version-check if cached
 
 # Allow overriding Kronos path via env variable
 KRONOS_PATH = os.environ.get("KRONOS_PATH", os.path.join(os.path.dirname(__file__), "..", "Kronos"))
@@ -70,7 +82,8 @@ def load_model(variant: str = "small") -> None:
     else:
         print("[Kronos] No GPU found — running on CPU (slower)")
 
-    print(f"[Kronos] Loading {variant} model from HuggingFace Hub...")
+    source = "local cache" if os.environ.get("HF_HUB_OFFLINE") == "1" else "HuggingFace Hub"
+    print(f"[Kronos] Loading {variant} model from {source}...")
     tokenizer = KronosTokenizer.from_pretrained(tokenizer_map[variant])
     model     = Kronos.from_pretrained(model_map[variant])
     model     = model.to(device)

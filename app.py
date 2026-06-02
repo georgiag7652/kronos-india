@@ -158,9 +158,7 @@ def _show_signals(predictions, trends, scan_results, stocks, save, track, days, 
 
     if track and signals:
         from tracker import log_signals
-        for sig in signals:
-            sig._trend = trends.get(sig.symbol)
-        n = log_signals(signals, pred_days=int(days), interval=interval)
+        n = log_signals(signals, pred_days=int(days), interval=interval, trends=trends)
         st.success(f"Logged {n} signal(s) to tracker.db")
 
 

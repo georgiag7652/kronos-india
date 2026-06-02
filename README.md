@@ -249,10 +249,10 @@ Each stock gets a score from **-8 to +8** based on:
 
 | Level | Score | Meaning |
 | --- | --- | --- |
-| `STRONG ***` | ≥ +5 / ≤ -5 | Trend fully agrees with Kronos |
-| `MODERATE **` | +2 to +4 / -2 to -4 | Trend leans same way |
-| `WEAK *` | 0 to ±1 | Neutral — take smaller position |
-| `AGAINST TREND` | Opposite sign | Trade blocked |
+| `STRONG ***` | ≥ +3 / ≤ -3 | Trend strongly agrees with Kronos |
+| `MODERATE **` | +1 or +2 / -1 or -2 | Trend leans same way |
+| `WEAK *` | 0 | Trend is neutral — take smaller position |
+| `AGAINST TREND` | Opposite sign to signal | Trade blocked |
 
 ---
 
