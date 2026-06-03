@@ -1,5 +1,6 @@
 """
-Unit tests for tracker.py — _determine_outcome and _next_business_days.
+Unit tests for tracker.py — _determine_outcome, _next_business_days,
+_nth_trading_day_from, and _next_market_open.
 
 Run with:  python -m pytest tests/
 """
@@ -12,7 +13,8 @@ import pandas as pd
 import pytest
 from datetime import datetime
 
-from tracker import _determine_outcome, _next_business_days
+from tracker import (_determine_outcome, _next_business_days,
+                     _nth_trading_day_from, _next_market_open)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -163,3 +165,60 @@ class TestNextBusinessDays:
         monday = datetime(2025, 10, 20)
         result = _next_business_days(monday, 1)
         assert result == datetime(2025, 10, 23)
+
+
+# ── _nth_trading_day_from ─────────────────────────────────────────────────────
+
+class TestNthTradingDayFrom:
+
+    def test_n1_on_trading_day_returns_same_day(self):
+        # Monday is a trading day — pred_days=1 should return the same day
+        monday = datetime(2025, 6, 2)
+        assert _nth_trading_day_from(monday, 1) == monday
+
+    def test_n1_on_weekend_snaps_to_monday(self):
+        saturday = datetime(2025, 5, 31)
+        result = _nth_trading_day_from(saturday, 1)
+        assert result == datetime(2025, 6, 2)  # Monday
+
+    def test_n3_from_monday(self):
+        # Monday + 3 trading days (inclusive) = Wednesday
+        monday = datetime(2025, 6, 2)
+        assert _nth_trading_day_from(monday, 3) == datetime(2025, 6, 4)
+
+    def test_n1_on_holiday_snaps_to_next_trading_day(self):
+        # 14 Mar 2025 is Holi — pred_days=1 should snap to 17 Mar (Monday)
+        holi = datetime(2025, 3, 14)
+        result = _nth_trading_day_from(holi, 1)
+        assert result == datetime(2025, 3, 17)
+
+    def test_intraday_same_day_eval(self):
+        # Core use case: 7 AM run on Monday with pred_days=1 → eval_by = today
+        monday_7am = datetime(2025, 6, 2, 7, 0, 0)
+        result = _nth_trading_day_from(monday_7am, 1)
+        assert result.date() == monday_7am.date()
+
+
+# ── _next_market_open ─────────────────────────────────────────────────────────
+
+class TestNextMarketOpen:
+
+    def test_pre_market_returns_today(self):
+        # Logged at 07:00 on Monday → evaluation starts today at 09:15
+        result = _next_market_open("2025-06-02 07:00")
+        assert result == "2025-06-02 09:15:00"
+
+    def test_post_market_returns_next_day(self):
+        # Logged at 16:00 on Monday → evaluation starts Tuesday at 09:15
+        result = _next_market_open("2025-06-02 16:00")
+        assert result == "2025-06-03 09:15:00"
+
+    def test_during_market_returns_next_day(self):
+        # Logged at 11:00 (mid-session) → next trading day
+        result = _next_market_open("2025-06-02 11:00")
+        assert result == "2025-06-03 09:15:00"
+
+    def test_pre_market_on_holiday_skips_to_next_trading_day(self):
+        # 14 Mar 2025 is Holi — even if logged at 07:00, today is not a trading day
+        result = _next_market_open("2025-03-14 07:00")
+        assert result == "2025-03-17 09:15:00"  # Monday

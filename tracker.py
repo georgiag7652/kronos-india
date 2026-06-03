@@ -122,6 +122,27 @@ def _next_business_days(from_date: datetime, n: int) -> datetime:
     return d
 
 
+def _nth_trading_day_from(from_date: datetime, n: int) -> datetime:
+    """Returns the nth trading day ON OR AFTER from_date (1-indexed).
+
+    Unlike _next_business_days (which always advances), this counts from_date
+    itself as day 1 when it is a trading day.  This means pred_days=1 evaluates
+    on the same calendar day the signal was generated, enabling same-day
+    evaluation for intraday runs before market open.
+    """
+    d = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    # Snap to first trading day on or after from_date
+    while not _is_trading_day(d):
+        d += timedelta(days=1)
+    # Advance n-1 more trading days
+    count = 1
+    while count < n:
+        d += timedelta(days=1)
+        if _is_trading_day(d):
+            count += 1
+    return d
+
+
 # ─── Logging ──────────────────────────────────────────────────────────────────
 
 def log_signals(signals: list, pred_days: int = 3, interval: str = "1h",
@@ -133,7 +154,7 @@ def log_signals(signals: list, pred_days: int = 3, interval: str = "1h",
     """
     init_db()
     now     = datetime.now()
-    eval_by = _next_business_days(now, pred_days)
+    eval_by = _nth_trading_day_from(now, pred_days)
     logged  = 0
 
     with _conn() as con:
@@ -176,9 +197,21 @@ def log_signals(signals: list, pred_days: int = 3, interval: str = "1h",
 # ─── Evaluation ───────────────────────────────────────────────────────────────
 
 def _next_market_open(logged_at: str) -> str:
-    """Returns the next NSE market open (09:15 IST) after logged_at, skipping weekends and holidays."""
+    """Returns the NSE market open (09:15) to start the evaluation window from.
+
+    If the signal was logged before today's market open on a trading day,
+    return today's 09:15 — this enables same-day evaluation for pre-market runs
+    (e.g. generated at 07:00, evaluated after 15:30 the same day).
+    Otherwise return the next trading day's 09:15.
+    """
     ts       = pd.Timestamp(logged_at)
-    next_day = ts.normalize() + pd.Timedelta(days=1)
+    today    = ts.normalize()
+    mkt_open = today + pd.Timedelta(hours=9, minutes=15)
+
+    if ts < mkt_open and _is_trading_day(today.to_pydatetime()):
+        return today.strftime("%Y-%m-%d") + " 09:15:00"
+
+    next_day = today + pd.Timedelta(days=1)
     while next_day.weekday() >= 5 or next_day.strftime("%Y-%m-%d") in NSE_HOLIDAYS:
         next_day += pd.Timedelta(days=1)
     return next_day.strftime("%Y-%m-%d") + " 09:15:00"
