@@ -339,7 +339,7 @@ def evaluate(force: bool = False) -> None:
 
             if candles is None or candles.empty:
                 print(f"    {r['symbol']:<14} no price data in window "
-                      f"({from_dt[:10]} → {r['eval_by']}) — skipping")
+                      f"({from_dt[:10]} -> {r['eval_by']}) - skipping")
                 continue
 
             actual_entry = float(candles.iloc[0]["open"])
